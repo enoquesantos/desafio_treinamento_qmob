@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qt6-tree.json</file>
+        <file>materialdesignicons-webfont.ttf</file>
+    </qresource>
+</RCC>
