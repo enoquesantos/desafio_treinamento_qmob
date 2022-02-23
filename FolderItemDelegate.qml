@@ -12,14 +12,34 @@ Rectangle {
     signal openDir(var dirs, string dirName)
     signal openFile(string fileName, string fileUrl)
 
+    function getIcon() {
+        if (params.type !== "directory") {
+            const fileExt = params.name.substr(params.name.length - 4)
+
+            if (fileExt.indexOf("py") > -1)
+                return MaterialIcons.mdiCodeArray
+
+            if (fileExt.indexOf("cpp") > -1)
+                return MaterialIcons.mdiCodeString
+
+            if (fileExt.indexOf(".h") > -1)
+                return MaterialIcons.mdiCodeBraces
+
+            return MaterialIcons.mdiFileDocument
+        }
+        return MaterialIcons.mdiFolder
+    }
+
     MouseArea {
         hoverEnabled: true
         anchors.fill: parent
         onEntered: {
+            rootItem.color = "#eec"
             if (params.type !== "directory")
                 iconButton.visible = false
         }
         onExited: {
+            rootItem.color = "#fff"
             if (params.type !== "directory")
                 iconButton.visible = true
         }
@@ -36,11 +56,12 @@ Rectangle {
     IconButton {
         id: iconButton
 
-        text: params.type === "directory" ? MaterialIcons.mdiFolder : MaterialIcons.mdiFileDocument
+        text: getIcon()
         anchors.horizontalCenter: parent.horizontalCenter
         enabled: false
         hoverEnabled: false
         font.pointSize: 22
+        color: params.type === "directory" ? "#444" : "#41cd52"
         anchors {
             top: parent.top
             topMargin: 5

@@ -30,8 +30,9 @@ ApplicationWindow {
         }
 
         Row {
-            id: homeTitleAndButtonRow
+            id: homeRow
 
+            z: 1
             anchors {
                 left: parent.left
                 leftMargin: 5
@@ -39,13 +40,12 @@ ApplicationWindow {
             }
 
             IconButton {
-                id: upButton
-
-                text: stackView.depth > 1 ? MaterialIcons.mdiChevronLeft : MaterialIcons.mdiHome
+                text: stackView.depth > 1 ? MaterialIcons.mdiChevronUp : MaterialIcons.mdiHome
                 anchors.verticalCenter: parent.verticalCenter
                 enabled: stackView.depth > 1
                 hoverEnabled: enabled
                 onClicked: stackView.backNavigation()
+                color: homeLabel.color
             }
 
             Label {
@@ -54,17 +54,14 @@ ApplicationWindow {
                 text: `${homeText} - ${projectText}`
                 anchors.verticalCenter: parent.verticalCenter
                 font.pointSize: 8
+                color: "#41cd52"
 
                 readonly property string homeText: "Home"
                 readonly property string projectText: "Qt Base (Core, Gui, Widgets, Network, ...)"
 
                 MouseArea {
                     anchors.fill: parent
-                    onClicked: {
-                        while (stackView.depth > 1) {
-                            stackView.pop()
-                        }
-                    }
+                    onClicked: stackView.clearNavigation()
                 }
             }
         }
@@ -72,18 +69,56 @@ ApplicationWindow {
         ListView {
             id: breadcrumb
 
-            anchors.verticalCenter: parent.verticalCenter
             orientation: Qt.Horizontal
+            height: 50
+            clip: true
+            focus: true
+            z: homeRow.z - 1
+            section.property: "modelData"
+            section.criteria: ViewSection.FullString
+            section.delegate: IconButton {
+                text: MaterialIcons.mdiChevronDoubleLeft
+                enabled: false
+                hoverEnabled: false
+                color: "#777"
+                font.pointSize: 11
+            }
+            anchors {
+                left: homeRow.right
+                leftMargin: 20
+                right: parent.right
+                rightMargin: 5
+                verticalCenter: parent.verticalCenter
+            }
             model: ListModel {
                 id: breadcrumbListModel
             }
             delegate: ItemDelegate {
+                implicitHeight: 50
+                implicitWidth: metrics.advanceWidth + 10
+
+                Rectangle {
+                    color: index === breadcrumb.currentIndex ? "#eea" : "transparent"
+                    anchors.fill: parent
+                }
+
                 onClicked: {
                     console.log("navigate to dir...")
+                    stackView.gotoNavigation(dirName)
+                }
+
+                TextMetrics {
+                    id: metrics
+                    text: label.text
                 }
 
                 Label {
+                    id: label
+
                     text: dirName
+                    font.pointSize: 8
+                    color: homeLabel.color
+                    anchors.centerIn: parent
                 }
             }
         }
@@ -103,6 +138,9 @@ ApplicationWindow {
             model: ListModel {
                 id: gridViewModel
             }
+            ScrollBar.vertical: ScrollBar {
+                policy: ScrollBar.AsNeeded
+            }
             delegate: FolderItemDelegate {
                 width: gridView.cellWidth
                 height: gridView.cellHeight
@@ -118,6 +156,7 @@ ApplicationWindow {
                     Qt.openUrlExternally(fileUrl)
                 }
             }
+
             Component.onCompleted: {
                 if (!Array.isArray(modelData)) {
                     modelData = [modelData]
@@ -141,8 +180,10 @@ ApplicationWindow {
 
             if (!isBackNavigation) {
                 breadcrumbListModel.append({ dirName: dirName })
+                breadcrumb.incrementCurrentIndex()
             } else {
                 breadcrumbListModel.remove({ dirName: dirName })
+                breadcrumb.decrementCurrentIndex()
             }
         }
 
@@ -184,16 +225,18 @@ ApplicationWindow {
             signal currentDirectoryChanged(string dirName, bool isBackNavigation)
             signal openNavigation(string dirName, var args)
             signal backNavigation
+            signal clearNavigation
+            signal gotoNavigation(var dirName)
 
             onOpenNavigation: function(dirName, args) {
                 // show BusyIndicator
                 openDirRunning()
 
-                push(gridViewComponent, args)
-                internal.currentDirs.push(dirName)
+                const item = push(gridViewComponent, args)
 
                 // ignore initial and first item
                 if (depth > 1) {
+                    internal.currentDirs[dirName] = item
                     currentDirectoryChanged(dirName, false)
                 }
 
@@ -202,19 +245,73 @@ ApplicationWindow {
             }
             onBackNavigation: {
                 if (depth > 1) {
-                    pop()
-                    currentDirectoryChanged(internal.currentDirs.pop(), true)
+                    const item = pop()
+                    const dirName = Object.keys(internal.currentDirs).find(key => internal.currentDirs[key] === item)
+                    delete internal.currentDirs[dirName]
+                    currentDirectoryChanged(dirName, true)
+                }
+            }
+            onClearNavigation: {
+                // clear the stack
+                while (depth > 1) {
+                    stackView.pop()
+                }
+
+                // clear the breadcrumb itens map
+                for (const key in internal.currentDirs) {
+                    delete internal.currentDirs[key]
+                }
+
+                // clear the breadcrumb
+                breadcrumbListModel.clear()
+            }
+            onGotoNavigation: function(dirName) {
+                pop(internal.currentDirs[dirName])
+            }
+
+            pushEnter: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 0
+                    to:1
+                    duration: 250
+                }
+            }
+            pushExit: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 1
+                    to:0
+                    duration: 250
+                }
+            }
+            popEnter: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 0
+                    to:1
+                    duration: 250
+                }
+            }
+            popExit: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 1
+                    to:0
+                    duration: 250
                 }
             }
 
             QtObject {
                 id: internal
 
-                property var currentDirs: []
-                onCurrentDirsChanged: console.log(currentDirs)
+                property var currentDirs: ({})
             }
         }
 
-        Component.onCompleted: stackView.openNavigation(Backend.loadJson(), {modelData: data, stackView: stackView})
+        Component.onCompleted: {
+            const data = Backend.loadJson()
+            stackView.openNavigation(data[0].name, {modelData: data, stackView: stackView})
+        }
     }
 }
