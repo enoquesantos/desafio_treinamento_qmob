@@ -3,7 +3,7 @@
 
 #include "httprequest.h"
 
-#include <QJsonObject>
+#include <QJsonArray>
 #include <QObject>
 #include <QtQml>
 
@@ -18,7 +18,7 @@ public:
     explicit Backend(QObject *parent = nullptr);
 
     Q_INVOKABLE void log(const QString &message);
-    Q_INVOKABLE QJsonObject loadJson();
+    Q_INVOKABLE QJsonArray loadJson();
 
 signals:
     void httpChanged(const HttpRequest *http);

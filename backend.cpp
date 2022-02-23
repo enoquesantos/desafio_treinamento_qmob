@@ -15,12 +15,13 @@ void Backend::log(const QString &message)
     qDebug() << message;
 }
 
-QJsonObject Backend::loadJson()
+QJsonArray Backend::loadJson()
 {
     QFile file;
-    file.setFileName(":/qt6-tree.json");
+    file.setFileName(":/qtbase-directory-tree.json");
     file.open(QIODevice::ReadOnly | QIODevice::Text);
     QByteArray content{file.readAll()};
     file.close();
-    return QJsonDocument::fromJson(content).object();
+    QJsonArray array{QJsonDocument::fromJson(content).object()};
+    return array;
 }

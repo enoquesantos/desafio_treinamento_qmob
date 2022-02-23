@@ -5,7 +5,7 @@ ToolButton {
     id: control
 
     implicitHeight: 50
-    implicitWidth: 50
+    implicitWidth: implicitHeight
     font.pointSize: 18
     font.family: "Material Design Icons"
     flat: true

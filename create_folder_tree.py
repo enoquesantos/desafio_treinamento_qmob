@@ -7,13 +7,9 @@ def read_file_info(filename):
     file_extension = pathlib.Path(filename).suffix
 
     return {
-        "permissions": metainfo.st_mode,
-        "inode number": metainfo.st_mode,
-        "device id": metainfo.st_mode,
-        "owner id": metainfo.st_mode,
-        "group id": metainfo.st_mode,
-        "file size": metainfo.st_mode,
-        "file type": file_extension.replace(".", ""),
+        "size": metainfo.st_mode,
+        "type": file_extension.replace(".", ""),
+        "url": "https://github.com/qt/qtbase/blob/dev/{}".format(filename.replace("/home/enoque/Devel/qtbase/", ""))
     }
 
 def path_to_dict(path):
@@ -26,12 +22,15 @@ def path_to_dict(path):
         d['type'] = "directory"
         d['children'] = [path_to_dict(os.path.join(path,x)) for x in os.listdir(path)]
     else:
+        meta_info = read_file_info(path)
         d['type'] = "file"
-        d['meta_info'] = read_file_info(path)
+        d['size'] = meta_info["size"]
+        d['type'] = meta_info["type"]
+        d['url'] = meta_info["url"]
     return d
 
-with open("/home/enoque/Devel/linux-kernel-tree.json", "w") as text_file:
-    text_file.write(json.dumps(path_to_dict('/home/enoque/Devel/linux-kernel')))
+with open("/home/enoque/Devel/qtbase-directory-tree.json", "w") as text_file:
+    text_file.write(json.dumps(path_to_dict('/home/enoque/Devel/qtbase')))
 
 print("")
 print("--------------------------------")
