@@ -27,6 +27,8 @@ qt_add_qml_module(appdesafio_treinamento_qmob
     QML_FILES
         main.qml
         FolderItemDelegate.qml
+        GridViewModel.qml
+        BreadCrumbDelegate.qml
         IconButton.qml
     SOURCES
         materialicons.h

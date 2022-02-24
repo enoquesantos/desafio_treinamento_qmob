@@ -1,6 +1,7 @@
 import os
 import json
 import pathlib
+import uuid
 
 def read_file_info(filename):
     metainfo = os.stat(filename)
@@ -20,6 +21,7 @@ def path_to_dict(path):
 
     if os.path.isdir(path):
         d['type'] = "directory"
+        d['uuid'] = str(uuid.uuid4())
         d['children'] = [path_to_dict(os.path.join(path,x)) for x in os.listdir(path)]
     else:
         meta_info = read_file_info(path)
@@ -29,7 +31,7 @@ def path_to_dict(path):
         d['url'] = meta_info["url"]
     return d
 
-with open("/home/enoque/Devel/qtbase-directory-tree.json", "w") as text_file:
+with open("/home/enoque/Qt/qt-projects/desafio_treinamento_qmob/qtbase-directory-tree.json", "w") as text_file:
     text_file.write(json.dumps(path_to_dict('/home/enoque/Devel/qtbase')))
 
 print("")

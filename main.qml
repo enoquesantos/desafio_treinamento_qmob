@@ -81,11 +81,11 @@ ApplicationWindow {
                 enabled: false
                 hoverEnabled: false
                 color: "#777"
-                font.pointSize: 11
+                font.pointSize: 10
             }
             anchors {
                 left: homeRow.right
-                leftMargin: 20
+                leftMargin: 5
                 right: parent.right
                 rightMargin: 5
                 verticalCenter: parent.verticalCenter
@@ -93,85 +93,23 @@ ApplicationWindow {
             model: ListModel {
                 id: breadcrumbListModel
             }
-            delegate: ItemDelegate {
-                implicitHeight: 50
-                implicitWidth: metrics.advanceWidth + 10
-
-                Rectangle {
-                    color: index === breadcrumb.currentIndex ? "#eea" : "transparent"
-                    anchors.fill: parent
-                }
-
-                onClicked: {
-                    console.log("navigate to dir...")
-                    stackView.gotoNavigation(dirName)
-                }
-
-                TextMetrics {
-                    id: metrics
-                    text: label.text
-                }
-
-                Label {
-                    id: label
-
-                    text: dirName
-                    font.pointSize: 8
-                    color: homeLabel.color
-                    anchors.centerIn: parent
-                }
-            }
+            delegate: BreadCrumbDelegate { }
         }
     }
 
     Component {
         id: gridViewComponent
 
-        GridView {
-            id: gridView
-
-            property var modelData
-            property StackView stackView
-
+        GridViewModel {
             cellWidth: window.width*0.20
             cellHeight: window.height*0.12
-            model: ListModel {
-                id: gridViewModel
-            }
-            ScrollBar.vertical: ScrollBar {
-                policy: ScrollBar.AsNeeded
-            }
-            delegate: FolderItemDelegate {
-                width: gridView.cellWidth
-                height: gridView.cellHeight
-                onOpenDir: function(dirs, dirName) {
-                    const args = {
-                        modelData: dirs,
-                        stackView: stackView
-                    }
-
-                    stackView.openNavigation(dirName, args)
-                }
-                onOpenFile: function(fileName, fileUrl) {
-                    Qt.openUrlExternally(fileUrl)
-                }
-            }
-
-            Component.onCompleted: {
-                if (!Array.isArray(modelData)) {
-                    modelData = [modelData]
-                }
-                for (var i = 0; i < modelData.length; ++i) {
-                    gridViewModel.append({params: modelData[i]})
-                }
-            }
         }
     }
 
     Connections {
         target: stackView
 
-        function onCurrentDirectoryChanged(dirName, isBackNavigation) {
+        function onDirChanged(dirUuid, dirName, isBackNavigation) {
             if (stackView.depth > 1) {
                 homeLabel.text = homeLabel.homeText
             } else {
@@ -179,10 +117,10 @@ ApplicationWindow {
             }
 
             if (!isBackNavigation) {
-                breadcrumbListModel.append({ dirName: dirName })
+                breadcrumbListModel.append({ dirUuid: dirUuid , dirName: dirName })
                 breadcrumb.incrementCurrentIndex()
             } else {
-                breadcrumbListModel.remove({ dirName: dirName })
+                breadcrumbListModel.remove(breadcrumb.currentIndex, 1)
                 breadcrumb.decrementCurrentIndex()
             }
         }
@@ -222,22 +160,22 @@ ApplicationWindow {
 
             signal openDirRunning
             signal openDirFinished
-            signal currentDirectoryChanged(string dirName, bool isBackNavigation)
-            signal openNavigation(string dirName, var args)
+            signal dirChanged(string dirUuid, string dirName, bool isBackNavigation)
+            signal openNavigation(string dirUuid, string dirName, var _children)
             signal backNavigation
             signal clearNavigation
-            signal gotoNavigation(var dirName)
+            signal gotoNavigation(string dirUuid)
 
-            onOpenNavigation: function(dirName, args) {
+            onOpenNavigation: function(dirUuid, dirName, _children) {
                 // show BusyIndicator
                 openDirRunning()
 
-                const item = push(gridViewComponent, args)
+                const item = push(gridViewComponent, _children)
 
                 // ignore initial and first item
                 if (depth > 1) {
-                    internal.currentDirs[dirName] = item
-                    currentDirectoryChanged(dirName, false)
+                    internal.dirs[dirUuid] = item
+                    dirChanged(dirUuid, dirName, false)
                 }
 
                 // start lazy hide BusyIndicator
@@ -245,10 +183,12 @@ ApplicationWindow {
             }
             onBackNavigation: {
                 if (depth > 1) {
-                    const item = pop()
-                    const dirName = Object.keys(internal.currentDirs).find(key => internal.currentDirs[key] === item)
-                    delete internal.currentDirs[dirName]
-                    currentDirectoryChanged(dirName, true)
+                    let dirUuid = breadcrumbListModel.get(breadcrumb.currentIndex).uuid
+
+                    pop()
+
+                    delete internal.dirs[dirUuid]
+                    dirChanged(null, null, true)
                 }
             }
             onClearNavigation: {
@@ -258,15 +198,28 @@ ApplicationWindow {
                 }
 
                 // clear the breadcrumb itens map
-                for (const key in internal.currentDirs) {
-                    delete internal.currentDirs[key]
+                for (const key in internal.dirs) {
+                    delete internal.dirs[key]
                 }
 
                 // clear the breadcrumb
                 breadcrumbListModel.clear()
             }
-            onGotoNavigation: function(dirName) {
-                pop(internal.currentDirs[dirName])
+            onGotoNavigation: function(dirUuid) {
+                let gotoIndex = -1
+                for (var i = 0; i < breadcrumbListModel.count; ++i) {
+                    if (breadcrumbListModel.get(i).dirUuid === dirUuid) {
+                        gotoIndex = i
+                        breadcrumb.decrementCurrentIndex()
+                        break
+                    }
+                }
+                if (gotoIndex > -1) {
+                    for (var j = breadcrumbListModel.count-1; j > gotoIndex; --j) {
+                        breadcrumbListModel.remove(j, 1)
+                    }
+                }
+                pop(internal.dirs[dirUuid])
             }
 
             pushEnter: Transition {
@@ -305,13 +258,13 @@ ApplicationWindow {
             QtObject {
                 id: internal
 
-                property var currentDirs: ({})
+                property var dirs: ({})
             }
         }
 
         Component.onCompleted: {
             const data = Backend.loadJson()
-            stackView.openNavigation(data[0].name, {modelData: data, stackView: stackView})
+            stackView.openNavigation(data[0].uuid, data[0].name, {modelData: data, stackView: stackView})
         }
     }
 }

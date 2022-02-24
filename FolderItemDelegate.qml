@@ -9,7 +9,7 @@ Rectangle {
     border.color: "#ccd"
     radius: 10
 
-    signal openDir(var dirs, string dirName)
+    signal openDir(var _children, string uuid, string name)
     signal openFile(string fileName, string fileUrl)
 
     function getIcon() {
@@ -34,7 +34,7 @@ Rectangle {
         hoverEnabled: true
         anchors.fill: parent
         onEntered: {
-            rootItem.color = "#eec"
+            rootItem.color = "#eea"
             if (params.type !== "directory")
                 iconButton.visible = false
         }
@@ -45,7 +45,7 @@ Rectangle {
         }
         onClicked: {
             if (params.type === "directory") {
-                rootItem.openDir(params.children, params.name)
+                rootItem.openDir(params.children, params.uuid, params.name)
             } else {
                 rootItem.openFile(params.name, params.url)
             }
