@@ -4,10 +4,8 @@ import QtQuick.Controls
 Rectangle {
     id: rootItem
 
-    color: "#fff"
-    border.width: 1
-    border.color: "#ccd"
-    radius: 10
+    color: "transparent"
+    border.width: 0
 
     signal openDir(var _children, string uuid, string name)
     signal openFile(string fileName, string fileUrl)
@@ -33,16 +31,9 @@ Rectangle {
     MouseArea {
         hoverEnabled: true
         anchors.fill: parent
-        onEntered: {
-            rootItem.color = "#eea"
-            if (params.type !== "directory")
-                iconButton.visible = false
-        }
-        onExited: {
-            rootItem.color = "#fff"
-            if (params.type !== "directory")
-                iconButton.visible = true
-        }
+        onEntered: iconButton.color = "#e3bbbd"
+        onExited: iconButton.color = "#97976a"
+        onPressedChanged: iconButton.color = pressed ? "#6f5e4f" : "#97976a"
         onClicked: {
             if (params.type === "directory") {
                 rootItem.openDir(params.children, params.uuid, params.name)
@@ -50,7 +41,6 @@ Rectangle {
                 rootItem.openFile(params.name, params.url)
             }
         }
-
     }
 
     IconButton {
@@ -60,11 +50,11 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         enabled: false
         hoverEnabled: false
-        font.pointSize: 22
-        color: params.type === "directory" ? "#444" : "#41cd52"
+        font.pointSize: 35
+        color: params.type === "directory" ? "#97976a" : "#df949d"
         anchors {
             top: parent.top
-            topMargin: 5
+            topMargin: 2
             horizontalCenter: parent.horizontalCenter
         }
     }
@@ -74,19 +64,18 @@ Rectangle {
 
         text: params.name
         color: iconButton.color
+        opacity: iconButton.opacity
         width: parent.width * 0.85
-        font.pointSize: iconButton.visible ? 8 : 9
-        height: iconButton.visible ? 20 : parent.height
-        elide: iconButton.visible ? Qt.ElideRight : Qt.ElideNone
-        wrapMode: iconButton.visible ? Text.NoWrap : Text.WrapAtWordBoundaryOrAnywhere
-        horizontalAlignment: iconButton.visible ? Text.AlignHCenter : Text.AlignLeft
-        verticalAlignment: iconButton.visible ? Text.AlignVCenter : Text.AlignTop
+        font.pointSize: 9
+        height: 20
+        elide: Qt.ElideRight
+        wrapMode: Text.NoWrap
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
         anchors {
-            horizontalCenter: iconButton.visible ? parent.horizontalCenter : undefined
-            top: iconButton.visible ? iconButton.bottom : parent.top
-            topMargin: iconButton.visible ? -5 : 10
-            left: iconButton.visible ? undefined : parent.left
-            leftMargin: iconButton.visible ? undefined : 3
+            horizontalCenter: parent.horizontalCenter
+            top: iconButton.bottom
+            topMargin: -5
         }
     }
 }

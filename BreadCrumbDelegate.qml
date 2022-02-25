@@ -2,15 +2,18 @@ import QtQuick
 import QtQuick.Controls
 
 ItemDelegate {
+    hoverEnabled: true
     implicitHeight: 50
-    implicitWidth: metrics.advanceWidth + 10
+    implicitWidth: metrics.advanceWidth < 50 ? 50 : metrics.advanceWidth
 
     Rectangle {
-        color: index === breadcrumb.currentIndex ? "#eea" : "transparent"
+        id: backgroundRect
+        color: index === breadcrumb.currentIndex ? "#22aa20" : "#41cd52"
         anchors.fill: parent
     }
 
     onClicked: stackView.gotoNavigation(dirUuid)
+    onHoveredChanged: backgroundRect.color = hovered ? "#22aa20" : "#41cd52"
 
     TextMetrics {
         id: metrics
@@ -21,8 +24,8 @@ ItemDelegate {
         id: label
 
         text: dirName
-        font.pointSize: 8
         color: homeLabel.color
         anchors.centerIn: parent
+        font.pointSize: homeLabel.font.pointSize
     }
 }

@@ -10,9 +10,7 @@ GridView {
     model: ListModel {
         id: gridViewModel
     }
-    ScrollBar.vertical: ScrollBar {
-        policy: ScrollBar.AsNeeded
-    }
+    snapMode: GridView.SnapToRow
     delegate: FolderItemDelegate {
         width: gridView.cellWidth
         height: gridView.cellHeight

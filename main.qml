@@ -9,24 +9,14 @@ ApplicationWindow {
     height: 732
     visible: true
     title: qsTr("Desafio Treinamento Qmob | Enoque Santos")
-
-    //    Component.onCompleted: {
-    //        var reply = Backend.http.get("https://qt.io")
-    //        reply.onFinished.connect(function(response) {
-    //            Backend.log("request response is:")
-    //            Backend.log(response)
-    //        })
-    //    }
-
     header: Rectangle {
         id: header
 
         height: 50
+        color: "#41cd52"
         anchors {
             left: parent.left
-            leftMargin: 5
             right: parent.right
-            rightMargin: 5
         }
 
         Row {
@@ -40,12 +30,17 @@ ApplicationWindow {
             }
 
             IconButton {
-                text: stackView.depth > 1 ? MaterialIcons.mdiChevronUp : MaterialIcons.mdiHome
+                id: iconButton
+
+                text: stackView.depth > 1 ? MaterialIcons.mdiChevronLeft : MaterialIcons.mdiHome
                 anchors.verticalCenter: parent.verticalCenter
                 enabled: stackView.depth > 1
                 hoverEnabled: enabled
                 onClicked: stackView.backNavigation()
                 color: homeLabel.color
+                background: Rectangle {
+                    color: iconButton.down ? "#119900" : (iconButton.hovered ? "#22aa20" : "#41cd52")
+                }
             }
 
             Label {
@@ -53,8 +48,8 @@ ApplicationWindow {
 
                 text: `${homeText} - ${projectText}`
                 anchors.verticalCenter: parent.verticalCenter
-                font.pointSize: 8
-                color: "#41cd52"
+                font.pointSize: 9
+                color: "#fff"
 
                 readonly property string homeText: "Home"
                 readonly property string projectText: "Qt Base (Core, Gui, Widgets, Network, ...)"
@@ -74,18 +69,19 @@ ApplicationWindow {
             clip: true
             focus: true
             z: homeRow.z - 1
-            section.property: "modelData"
+            section.property: "dirName"
+            section.labelPositioning: ViewSection.InlineLabels
             section.criteria: ViewSection.FullString
             section.delegate: IconButton {
                 text: MaterialIcons.mdiChevronDoubleLeft
                 enabled: false
                 hoverEnabled: false
-                color: "#777"
-                font.pointSize: 10
+                color: "#22aa20"
+                font.pointSize: 15
             }
             anchors {
                 left: homeRow.right
-                leftMargin: 5
+                leftMargin: 10
                 right: parent.right
                 rightMargin: 5
                 verticalCenter: parent.verticalCenter
@@ -97,12 +93,23 @@ ApplicationWindow {
         }
     }
 
+    //    Component.onCompleted: {
+    //        var reply = Backend.http.get("https://qt.io")
+    //        reply.onFinished.connect(function(response) {
+    //            Backend.log("request response is:")
+    //            Backend.log(response)
+    //        })
+    //    }
+
+    property double cellWidth: width >= 800 ? width*0.18 : windth*35
+
     Component {
         id: gridViewComponent
 
         GridViewModel {
-            cellWidth: window.width*0.20
-            cellHeight: window.height*0.12
+            cellWidth: cellWidth
+            cellHeight: window.height*0.15
+            Component.onCompleted: console.log("window.width: ", cellWidth)
         }
     }
 
@@ -135,7 +142,7 @@ ApplicationWindow {
     }
 
     Rectangle {
-        color: "#ddd"
+        color: "transparent"
         anchors.fill: parent
 
         BusyIndicator {
@@ -157,6 +164,7 @@ ApplicationWindow {
             id: stackView
 
             anchors.fill: parent
+            anchors.leftMargin: 5
 
             signal openDirRunning
             signal openDirFinished
@@ -227,7 +235,7 @@ ApplicationWindow {
                     property: "opacity"
                     from: 0
                     to:1
-                    duration: 250
+                    duration: 150
                 }
             }
             pushExit: Transition {
@@ -235,7 +243,7 @@ ApplicationWindow {
                     property: "opacity"
                     from: 1
                     to:0
-                    duration: 250
+                    duration: 150
                 }
             }
             popEnter: Transition {
@@ -243,7 +251,7 @@ ApplicationWindow {
                     property: "opacity"
                     from: 0
                     to:1
-                    duration: 250
+                    duration: 200
                 }
             }
             popExit: Transition {
@@ -251,7 +259,7 @@ ApplicationWindow {
                     property: "opacity"
                     from: 1
                     to:0
-                    duration: 250
+                    duration: 200
                 }
             }
 
